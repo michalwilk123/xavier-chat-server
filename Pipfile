@@ -12,6 +12,10 @@ fastapi = "*"
 uvicorn = "*"
 python-dotenv = "*"
 websockets = "*"
+pytest-asyncio = "*"
+httpx = "*"
+pytest-mock = "*"
+requests = "*"
 
 [dev-packages]
 pytest = "*"
