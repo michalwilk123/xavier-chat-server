@@ -23,15 +23,11 @@ async def delete_user(user: str, signature: str) -> bool:
 
 
 async def get_user_data(user: str) -> Optional[UserData]:
-    result = await user_collection.find_one({"user": user})
+    result = await user_collection.find_one({"login": user})
 
     if result is None:
         return None
-    return UserData(
-        login=result["login"],
-        public_id_key=result["public_id_key"],
-        public_signed_pre_key=result["public_signed_pre_key"]
-    )
+    return UserData(**result)
 
 
 async def user_auth(login: str, signature: str) -> bool:
