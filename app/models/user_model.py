@@ -15,6 +15,9 @@ class BasicUserAuthorization(BaseModel):
     login: str
     signature: str
 
-class UserInfoPayload(BaseModel):
-    success:bool
-    user_data:Optional[UserData]
+
+class UserDataDTO(BaseModel):
+    login: str
+    public_id_key: str
+    public_signed_pre_key: str
+    number_of_otk: int
