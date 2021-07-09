@@ -31,7 +31,7 @@ async def _get_otk_keys(login: str) -> List[Optional[str]]:
 async def get_otk_key(login: str, otk_index: int) -> str:
     otk_list = await _get_otk_keys(login)
 
-    if len(otk_list) >= otk_index:
+    if len(otk_list) <= otk_index:
         raise IndexError("Given index is out of bounds")
 
     result = otk_list[otk_index]
@@ -46,7 +46,7 @@ async def set_otk_key(
 ) -> None:
     otk_list = await _get_otk_keys(login)
 
-    if len(otk_list) >= otk_index:
+    if len(otk_list) <= otk_index:
         raise IndexError("Given index is out of bounds")
 
     result = otk_list[otk_index]
@@ -70,7 +70,7 @@ async def get_available_indexes(login: str) -> List[int]:
 async def set_missing_key(login: str, key: str, otk_index: int):
     otk_list = await _get_otk_keys(login)
 
-    if len(otk_list) >= otk_index:
+    if len(otk_list) <= otk_index:
         raise IndexError("Given index is out of bounds")
 
     result = otk_list[otk_index]
