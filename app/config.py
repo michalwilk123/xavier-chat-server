@@ -1,5 +1,4 @@
 from functools import lru_cache
-from typing import Any
 from pydantic import BaseSettings
 
 
@@ -11,6 +10,7 @@ def get_db_settings():
 class Settings(BaseSettings):
     xavier_mongo_db_username: str
     xavier_mongo_db_password: str
+    base_url: str
 
     class Config:
         env_file = ".env"
