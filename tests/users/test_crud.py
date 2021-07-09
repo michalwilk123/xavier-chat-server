@@ -2,6 +2,7 @@
 Unit tests for crud operations on users.
 Database connection is mocked.
 """
+from fastapi.exceptions import HTTPException
 import pytest
 from httpx import AsyncClient
 from app.main import app
@@ -75,4 +76,11 @@ def test_delete(mocker):
 
     assert response.status_code == status.HTTP_200_OK
     assert response.json() == "OK"
+
+    mocker.patch("app.db.user.delete_user", return_value=False)
+
+    response = client.delete("/user", auth=auth)
+    assert response.status_code == status.HTTP_401_UNAUTHORIZED
+
+
 
