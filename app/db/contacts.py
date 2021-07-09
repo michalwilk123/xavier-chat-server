@@ -23,4 +23,4 @@ async def send_invite(invite: InviteModel):
     await contacts_collection.delete_many(
         {"my_login": invite.my_login, "contact_login": invite.contact_login}
     )
-    await contacts_collection.insert_one(invite)
+    await contacts_collection.insert_one(invite.dict())

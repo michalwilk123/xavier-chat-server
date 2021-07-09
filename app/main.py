@@ -12,9 +12,10 @@ app_information = AppInformation()
 async def root():
     return {"about": "hello to my simple chat rest api"}
 
-@app.get('/alive')
+
+@app.get("/alive")
 async def is_alive():
-    return {'alive' : True}
+    return "OK"
 
 
 app.include_router(user_router)

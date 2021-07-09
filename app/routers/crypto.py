@@ -1,11 +1,12 @@
 from app.db.user import user_auth
 from typing import Any
-from fastapi import APIRouter
-from fastapi.exceptions import HTTPException
-from app.models.otk_model import OtkModel, OtkInitialModel, OtkRequestModel
+from fastapi import APIRouter, HTTPException
+from fastapi.security import HTTPBasic
+from app.models.otk_model import OtkModel, OtkInitialModel
 from app.db import crypto
 
 
+security = HTTPBasic()
 crypto_router = APIRouter(prefix="/crypto")
 
 

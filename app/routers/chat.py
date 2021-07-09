@@ -33,8 +33,9 @@ async def websocket_endpoint(websocket: WebSocket, data: WebsocketInit):
     except WebSocketDisconnect:
         await close_websocket_con(data.my_login, data.signature)
 
+
 @chat_router.get("")
-async def get_pending_messages(credentials:BasicUserAuthorization):
+async def get_pending_messages(credentials: BasicUserAuthorization):
     if not await user_auth(credentials.login, credentials.signature):
         return {"response": "not authorized"}
 
