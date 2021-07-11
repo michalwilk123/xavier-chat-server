@@ -12,17 +12,17 @@ from fastapi.websockets import WebSocketDisconnect
 from app.models.websocket_init import WebsocketInit
 from app.db.user import user_auth
 from app.db import chat
-from . import http_basic_security
+from .deps import http_basic_security
 
 chat_router = APIRouter(prefix="/chat")
 
 
 async def send_chat_message(websock: WebSocket, login: str):
-    async for msg in websock:
-        if check_if_user_available(login):
-            await send_chat_message_via_websockets(login, msg)
-        else:
-            await send_chat_message_to_absent_user(login, msg)
+    # if check_if_user_available(login):
+    #     await send_chat_message_via_websockets(login, msg)
+    # else:
+    # await send_chat_message_to_absent_user(login, msg)
+    ...
 
 
 @chat_router.websocket("/ws")
@@ -40,8 +40,9 @@ async def websocket_endpoint(websocket: WebSocket, data: WebsocketInit):
 async def get_pending_messages(
     credentials: HTTPBasicCredentials = Depends(http_basic_security),
 ):
-    if not await user_auth(credentials.username, credentials.password):
-        return {"response": "not authorized"}
+    ...
+    # if not await user_auth(credentials.username, credentials.password):
+    #     return {"response": "not authorized"}
 
-    messages = await chat.get_pending_messages(credentials.username)
-    return {"pending_messages": messages}
+    # messages = await chat.get_pending_messages(credentials.username)
+    # return {"pending_messages": messages}

@@ -1,12 +1,10 @@
 from pydantic import BaseModel
 from enum import Enum
 
-
-class MessageType(Enum):
-    TEXT_MESSAGE = 1
-    X3DH_SESSION_START = 2
-    X3DH_SESSION_HANDSHAKE = 3
-    AUTH = 4
+MessageType = Enum(
+    "MessageType",
+    "TEXT_MESSAGE X3DH_SESSION_START X3DH_SESSION_HANDSHAKE AUTH",
+)
 
 
 class MessageHeaderModel(BaseModel):
