@@ -1,6 +1,3 @@
-from .crypto import crypto_router
-from .user import user_router
-from .chat import chat_router
-from .contacts import contact_router
+from fastapi.security import HTTPBasic
 
-__all__ = ["crypto_router", "user_router", "chat_router", "contact_router"]
+http_basic_security = HTTPBasic()

@@ -1,6 +1,5 @@
 from typing import List
 from .collections import message_collection
-import json
 
 
 async def send_chat_message_to_absent_user(login: str, message: str):

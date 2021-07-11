@@ -2,7 +2,6 @@
 Unit tests for crud operations on users.
 Database connection is mocked.
 """
-from fastapi.exceptions import HTTPException
 import pytest
 from httpx import AsyncClient
 from app.main import app
