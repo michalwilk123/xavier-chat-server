@@ -5,6 +5,9 @@ from app.routers.chat import chat_router
 from app.routers.crypto import crypto_router
 from app.routers.contacts import contact_router
 from app.config import AppInformation
+from app.db.database import Base, engine
+
+Base.metadata.create_all(bind=engine)
 
 app = FastAPI()
 app_information = AppInformation()
