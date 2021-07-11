@@ -1,6 +1,9 @@
 from fastapi import FastAPI
 from fastapi.openapi.utils import get_openapi
-from .routers import user_router, chat_router, contact_router
+from app.routers.user import user_router
+from app.routers.chat import chat_router
+from app.routers.crypto import crypto_router
+from app.routers.contacts import contact_router
 from app.config import AppInformation
 
 app = FastAPI()
@@ -18,9 +21,12 @@ async def is_alive():
     return "OK"
 
 
+# this MUST be BEFORE app include commands!
+user_router.include_router(crypto_router)
+user_router.include_router(contact_router)
+
 app.include_router(user_router)
 app.include_router(chat_router)
-app.include_router(contact_router)
 
 
 def custom_openapi():
