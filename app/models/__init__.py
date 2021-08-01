@@ -1,12 +1,12 @@
-from .user_model import UserData, UserDataDTO
-from .contact_model import InviteModel
-from .message_model import (
+from .user import UserData, UserDataDTO
+from .invites import InviteModel
+from .message import (
     MessageType,
     MessageHeaderModel,
     MessageBodyModel,
     MessageModel,
 )
-from .otk_model import OtkModel, OtkInitialModel, OtkRequestModel
+from .otk import OtkModel, OtkInitialModel, OtkRequestModel
 
 __all__ = [
     "UserData",

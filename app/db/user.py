@@ -1,7 +1,7 @@
 from typing import Optional
-from app.models.user_model import UserData
+from app.models.user import UserData
 from sqlalchemy.orm import Session
-from app.db.models import User
+from app.db.models import OneTimeKey, User
 from .crypto import set_one_time_keys
 
 
@@ -20,13 +20,15 @@ def add_user(db: Session, user: UserData) -> bool:
     del user_dict["one_time_keys"]
     item = User(**user_dict)
 
-    if set_one_time_keys(db, user.login, keys) is False:
-        return False
-
+    # trying to set collection of initial keys
     db.add(item)
     db.commit()
-    db.refresh(item)
-    res = get_user_data(db, user.login)
+
+    if (
+        set_one_time_keys(db, user.login, {i: v for i, v in enumerate(keys)})
+        is False
+    ):
+        return False
     return True
 
 
@@ -45,10 +47,10 @@ def get_user_data(db: Session, login: str) -> Optional[UserData]:
     if result is None:
         return None
 
-    return UserData.from_orm(result)
-
-
-def user_auth(db: Session, login: str, signature: str) -> bool:
-    # res = db.users.find_one({"login": login, "signature": signature})
-    # return res is not None
-    return False
+    return UserData(
+        login=result.login,
+        public_id_key=result.public_id_key,
+        public_signed_pre_key=result.public_signed_pre_key,
+        signature=result.signature,
+        one_time_keys=[k.value for k in result.one_time_keys],
+    )

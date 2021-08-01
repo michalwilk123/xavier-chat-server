@@ -3,16 +3,11 @@ from fastapi.param_functions import Depends
 from fastapi.security import HTTPBasicCredentials
 from app.chat.connection import (
     close_websocket_con,
-    send_chat_message_via_websockets,
-    check_if_user_available,
     add_new_websocket_con,
 )
 from app.db.chat import send_chat_message_to_absent_user
 from fastapi.websockets import WebSocketDisconnect
 from app.models.websocket_init import WebsocketInit
-from app.db.user import user_auth
-from app.db import chat
-from .deps import http_basic_security
 
 chat_router = APIRouter(prefix="/chat")
 
@@ -37,9 +32,7 @@ async def websocket_endpoint(websocket: WebSocket, data: WebsocketInit):
 
 
 @chat_router.get("")
-async def get_pending_messages(
-    credentials: HTTPBasicCredentials = Depends(http_basic_security),
-):
+async def get_pending_messages():
     ...
     # if not await user_auth(credentials.username, credentials.password):
     #     return {"response": "not authorized"}

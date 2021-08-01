@@ -7,7 +7,7 @@ class UserData(BaseModel):
     public_id_key: str
     public_signed_pre_key: str
     signature: str
-    one_time_keys: List[Optional[str]]
+    one_time_keys: List[str]
 
     class Config:
         orm_mode = True

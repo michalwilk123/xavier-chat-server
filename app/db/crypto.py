@@ -1,5 +1,5 @@
-from app.models.user_model import UserData
-from typing import List, Optional
+from app.db.models import OneTimeKey, User
+from typing import Dict, Tuple, Optional
 from sqlalchemy.orm import Session
 
 
@@ -7,93 +7,63 @@ class CryptoControllerException(Exception):
     ...
 
 
-async def _get_otk_keys(db: Session, login: str) -> List[Optional[str]]:
-    user_data = await db.users.find_one({"login": login})
-
-    if user_data is None:
-        raise KeyError(f"Database does not contain user with login {login}")
-
-    keys = user_data["one_time_keys"]
-
-    if keys is None:
-        raise CryptoControllerException(
-            "Keys not initialized. Something went terribly wrong"
-        )
-
-    if not any(keys):
-        raise CryptoControllerException(
-            "No key left. Wait for the owner to replenish keys"
-        )
-
-    return keys
-
-
-async def get_otk_key(db: Session, login: str, otk_index: int) -> str:
-    otk_list = await _get_otk_keys(db, login)
-
-    if len(otk_list) <= otk_index:
-        raise IndexError("Given index is out of bounds")
-
-    result = otk_list[otk_index]
-    if result is None:
-        raise IndexError("There is not key available at given index")
-
-    return result
-
-
-async def set_otk_key(
-    db: Session,
-    login: str,
-    otk_index: int,
-    /,
-    new_otk: Optional[str] = None,
-) -> None:
-    otk_list = await _get_otk_keys(db, login)
-
-    if len(otk_list) <= otk_index:
-        raise IndexError("Given index is out of bounds")
-
-    result = otk_list[otk_index]
-    if result is None:
-        raise IndexError("The key is already deleted")
-
-    otk_list[otk_index] = new_otk
-    res = await db.users.update_one(
-        {"login": login}, {"$set": {"one_time_keys": otk_list}}
+# NOTE: could make some logs
+def get_free_otk(db: Session, login: str) -> Optional[Tuple[int, str]]:
+    res = (
+        db.query(OneTimeKey)
+        .join(User)
+        .filter(User.login == login)
+        .filter(OneTimeKey.used == False)
+        .first()
     )
 
     if res is None:
-        raise CryptoControllerException("User somehow dissapeared")
+        return None
+
+    otk_val = get_otk_from_idx(db, login, res.index)
+
+    if otk_val is None:
+        return None
+
+    return res.index, otk_val
 
 
-async def get_available_indexes(db: Session, login: str) -> List[int]:
-    otk_list = await _get_otk_keys(db, login)
-    return [idx for idx, el in enumerate(otk_list) if el is not None]
-
-
-async def set_missing_key(db: Session, login: str, key: str, otk_index: int):
-    otk_list = await _get_otk_keys(db, login)
-
-    if len(otk_list) <= otk_index:
-        raise IndexError("Given index is out of bounds")
-
-    result = otk_list[otk_index]
-    if result is not None:
-        raise IndexError("The key is already set")
-
-    otk_list[otk_index] = key
-    res = await db.users.update_one(
-        {"login": login}, {"$set": {"one_time_keys": otk_list}}
+def get_otk_from_idx(db: Session, login: str, idx: int) -> Optional[str]:
+    res = (
+        db.query(OneTimeKey)
+        .join(User)
+        .filter(User.login == login)
+        .filter(OneTimeKey.index == idx)
+        .first()
     )
 
     if res is None:
-        raise CryptoControllerException("User somehow dissapeared")
+        return None
+
+    if res.used is True:
+        return None
+
+    otk_value = res.value
+    res.used = False
+    db.commit()
+    return otk_value
 
 
 def set_one_time_keys(
-    db: Session,
-    login: str,
-    keys: List[Optional[str]],
+    db: Session, login: str, otk_collection: Dict[int, str]
 ) -> bool:
+    user = db.query(User).filter(User.login == login).first()
 
+    if user is None:
+        return False
+
+    otk_list = [
+        OneTimeKey(value=otk_collection[idx], index=idx)
+        for idx in otk_collection
+    ]
+
+    for otk in otk_list:
+        user.one_time_keys.append(otk)
+
+    db.commit()
     return True

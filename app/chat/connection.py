@@ -1,6 +1,5 @@
 from typing import Dict
 from fastapi import WebSocket
-from app.db.user import user_auth
 
 dict_of_websocket_connections: Dict[str, WebSocket] = {}
 

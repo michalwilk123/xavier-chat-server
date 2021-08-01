@@ -3,7 +3,7 @@ from fastapi.openapi.utils import get_openapi
 from app.routers.user import user_router
 from app.routers.chat import chat_router
 from app.routers.crypto import crypto_router
-from app.routers.contacts import contact_router
+from app.routers.invites import invites_router
 from app.config import AppInformation
 from app.db.database import Base, engine
 
@@ -26,7 +26,7 @@ async def is_alive():
 
 # this MUST be BEFORE app include commands!
 user_router.include_router(crypto_router)
-user_router.include_router(contact_router)
+user_router.include_router(invites_router)
 
 app.include_router(user_router)
 app.include_router(chat_router)
