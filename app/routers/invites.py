@@ -24,11 +24,7 @@ def send_invite(
         )
 
     # Retrieving data about both parties
-    sender = user.get_user_data(
-        db,
-        invite.sender_login,
-        get_id=True
-    )
+    sender = user.get_user_data(db, invite.sender_login, get_id=True)
     if sender is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,

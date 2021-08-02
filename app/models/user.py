@@ -1,6 +1,7 @@
 from typing import List, Optional
 from pydantic import BaseModel
 
+
 class OrmUserData(BaseModel):
     login: str
     public_id_key: str

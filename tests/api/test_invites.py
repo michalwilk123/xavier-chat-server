@@ -132,9 +132,7 @@ def test_get_invites():
     assert (
         response.status_code == status.HTTP_200_OK
     ), "invite retrieval should end up successful"
-    assert (
-        len(response.json()) == 1
-    ), "expecting 1 new invite from the bob"
+    assert len(response.json()) == 1, "expecting 1 new invite from the bob"
 
     test_client.delete("/users", json=a_sig)
     test_client.delete("/users", json=b_sig)
@@ -146,14 +144,12 @@ def test_otks_consumed():
 
     # bob sends an invite to alice
     response = test_client.post("/invites", json=data | b_sig)
-    print(f"first{response.json()}")
     assert (
         response.status_code == status.HTTP_200_OK
     ), "first invite request should be successful"
 
     # bob sends an invite to alice second time
     response = test_client.post("/invites", json=data | b_sig)
-    print(f"second{response.json()}")
     assert (
         response.status_code == status.HTTP_200_OK
     ), "there should be enough keys for second request"
@@ -161,7 +157,6 @@ def test_otks_consumed():
     # bob sends an invite to alice third time
     # he should run out of the available keys
     response = test_client.post("/invites", json=data | b_sig)
-    print(f"third{response.json()}")
     assert (
         response.status_code == status.HTTP_404_NOT_FOUND
     ), "Alice should run out of keys"
@@ -179,10 +174,7 @@ def test_recieve_no_invites():
     assert (
         response.status_code == status.HTTP_200_OK
     ), "invite retrieval should end up successful"
-    assert (
-        response.json() == []
-    ), "expecting 0 new invites from the users"
+    assert response.json() == [], "expecting 0 new invites from the users"
 
     test_client.delete("/users", json=a_sig)
     test_client.delete("/users", json=b_sig)
-
