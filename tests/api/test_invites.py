@@ -58,7 +58,7 @@ def test_auth_integrity():
     test_client.delete("/users", json=b_sig)
 
     signature = generate_signature(alice_user.login, alice_user.signature, -1)
-    response = test_client.post("/users/invites", json=data | signature)
+    response = test_client.post("/invites", json=data | signature)
     assert (
         response.status_code == status.HTTP_401_UNAUTHORIZED
     ), "Signature has timed out, and it should cause the authorization to fail"
@@ -66,13 +66,13 @@ def test_auth_integrity():
     signature = generate_signature(
         alice_user.login, alice_user.signature, 1000, "fake_checksum"
     )
-    response = test_client.post("/users/invites", json=data | signature)
+    response = test_client.post("/invites", json=data | signature)
     assert (
         response.status_code == status.HTTP_404_NOT_FOUND
     ), "User does not exist. An exception should be thrown"
 
     test_client.post("/users", json=alice_user.dict())
-    response = test_client.post("/users/invites", json=data | signature)
+    response = test_client.post("/invites", json=data | signature)
     assert response.status_code == status.HTTP_401_UNAUTHORIZED, (
         "The check sum of the signature is incorrent and cause the "
         "authorization to fail."
@@ -80,7 +80,7 @@ def test_auth_integrity():
 
     # valid signature
     signature = generate_signature(alice_user.login, alice_user.signature)
-    response = test_client.post("/users/invites", json=data | signature)
+    response = test_client.post("/invites", json=data | signature)
     assert (
         response.status_code == status.HTTP_404_NOT_FOUND
     ), "second user does not exist and this should cause the error"
@@ -88,7 +88,7 @@ def test_auth_integrity():
     # creating bob user
     test_client.post("/users", json=bob_user.dict())
 
-    response = test_client.post("/users/invites", json=data | signature)
+    response = test_client.post("/invites", json=data | signature)
 
     assert (
         response.status_code == status.HTTP_200_OK
@@ -105,7 +105,8 @@ def test_send_invite_normal():
     data = {"invite": bob_to_alice_invite.dict()}
 
     # bob sends an invite to alice
-    response = test_client.post("/users/invites", json=data | b_sig)
+    response = test_client.post("/invites", json=data | b_sig)
+    print(f"{response.json()=}")
     assert (
         response.status_code == status.HTTP_200_OK
     ), "invite request should be successful"
@@ -115,31 +116,73 @@ def test_send_invite_normal():
     test_client.delete("/users", json=b_sig)
 
 
-def test_otks_consumed():
-    ...
-
-
 def test_get_invites():
-    ...
-    # a_sig, b_sig = clear_and_create_alice_bob()
+    a_sig, b_sig = clear_and_create_alice_bob()
 
-    # data = {"invite": bob_to_alice_invite.dict()}
+    data = {"invite": bob_to_alice_invite.dict()}
 
-    # # bob sends an invite to the alice
-    # response = test_client.post("/users/invites", json=data | b_sig)
-    # assert (
-    #     response.status_code == status.HTTP_200_OK
-    # ), "invite request should be successful"
+    # bob sends an invite to the alice
+    response = test_client.post("/invites", json=data | b_sig)
+    assert (
+        response.status_code == status.HTTP_200_OK
+    ), "invite request should be successful"
 
-    # # alice checks her inbox for incoming invites
-    # response = test_client.post("/users/invites", json=a_sig)
-    # assert (
-    #     response.status_code == status.HTTP_200_OK
-    # ), "invite retriecal should end up successful"
+    # alice checks her inbox for incoming invites
+    response = test_client.get("/invites", json=a_sig)
+    assert (
+        response.status_code == status.HTTP_200_OK
+    ), "invite retrieval should end up successful"
+    assert (
+        len(response.json()) == 1
+    ), "expecting 1 new invite from the bob"
 
-    # test_client.delete("/users", json=a_sig)
-    # test_client.delete("/users", json=b_sig)
+    test_client.delete("/users", json=a_sig)
+    test_client.delete("/users", json=b_sig)
+
+
+def test_otks_consumed():
+    a_sig, b_sig = clear_and_create_alice_bob()
+    data = {"invite": bob_to_alice_invite.dict()}
+
+    # bob sends an invite to alice
+    response = test_client.post("/invites", json=data | b_sig)
+    print(f"first{response.json()}")
+    assert (
+        response.status_code == status.HTTP_200_OK
+    ), "first invite request should be successful"
+
+    # bob sends an invite to alice second time
+    response = test_client.post("/invites", json=data | b_sig)
+    print(f"second{response.json()}")
+    assert (
+        response.status_code == status.HTTP_200_OK
+    ), "there should be enough keys for second request"
+
+    # bob sends an invite to alice third time
+    # he should run out of the available keys
+    response = test_client.post("/invites", json=data | b_sig)
+    print(f"third{response.json()}")
+    assert (
+        response.status_code == status.HTTP_404_NOT_FOUND
+    ), "Alice should run out of keys"
+
+    # cleaning up
+    test_client.delete("/users", json=a_sig)
+    test_client.delete("/users", json=b_sig)
 
 
 def test_recieve_no_invites():
-    ...
+    a_sig, b_sig = clear_and_create_alice_bob()
+
+    # alice checks her inbox for incoming invites
+    response = test_client.get("/invites", json=a_sig)
+    assert (
+        response.status_code == status.HTTP_200_OK
+    ), "invite retrieval should end up successful"
+    assert (
+        response.json() == []
+    ), "expecting 0 new invites from the users"
+
+    test_client.delete("/users", json=a_sig)
+    test_client.delete("/users", json=b_sig)
+
