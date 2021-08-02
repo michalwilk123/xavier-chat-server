@@ -14,7 +14,7 @@ def get_user_info(login: str, db: Session = Depends(get_db)) -> UserDataDTO:
     if user_data is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"User {login} not found",
+            detail=f"User with the name {login} not found",
         )
     return UserDataDTO(**user_data.dict())
 
