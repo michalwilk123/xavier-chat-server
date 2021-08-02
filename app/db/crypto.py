@@ -1,13 +1,30 @@
 from app.db.models import OneTimeKey, User
-from typing import Dict, Tuple, Optional
+from typing import Dict, Tuple, Optional, List
 from sqlalchemy.orm import Session
 
 
+# NOTE: could make some logs
 class CryptoControllerException(Exception):
     ...
 
 
-# NOTE: could make some logs
+def get_user_otks(
+    db: Session, login: str, /, key_used: bool
+) -> Optional[List[Tuple[int, str]]]:
+    res = (
+        db.query(OneTimeKey)
+        .join(User)
+        .filter(User.login == login)
+        .filter(OneTimeKey.used == key_used)
+        .all()
+    )
+
+    if res is None:
+        return None
+
+    return [(key.index, key.value) for key in res]
+
+
 def get_free_otk(db: Session, login: str) -> Optional[Tuple[int, str]]:
     res = (
         db.query(OneTimeKey)
@@ -44,7 +61,7 @@ def get_otk_from_idx(db: Session, login: str, idx: int) -> Optional[str]:
         return None
 
     otk_value = res.value
-    res.used = False
+    res.used = True
     db.commit()
     return otk_value
 

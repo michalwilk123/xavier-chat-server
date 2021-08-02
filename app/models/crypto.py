@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Optional, List, Tuple
 from pydantic import BaseModel
 import hashlib
 import secrets
@@ -6,6 +6,15 @@ import secrets
 
 class SignatureError(Exception):
     ...
+
+
+class OtkSimple(BaseModel):
+    index: int
+    value: str
+
+
+class OtkCollection(BaseModel):
+    collection: List[OtkSimple]
 
 
 class ZkSnarkNaive(BaseModel):
@@ -19,6 +28,8 @@ class ZkSnarkNaive(BaseModel):
     of original message.
 
     Check sum is calculated with initial secret, like in jwt.
+
+    NOTE: should implement also some kind of pepper
     """
 
     expiration_time: int
