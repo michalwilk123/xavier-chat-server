@@ -25,7 +25,7 @@ async def is_alive():
 
 
 # this MUST be BEFORE app include commands!
-user_router.include_router(crypto_router)
+app.include_router(crypto_router)
 app.include_router(invites_router)
 app.include_router(user_router)
 app.include_router(chat_router)

@@ -1,5 +1,6 @@
-from typing import Optional, List, Tuple
+from typing import Optional, List
 from pydantic import BaseModel
+from fastapi import Query
 import hashlib
 import secrets
 
@@ -9,8 +10,8 @@ class SignatureError(Exception):
 
 
 class OtkSimple(BaseModel):
-    index: int
-    value: str
+    index: int = Query(..., le=100)
+    value: str = Query(..., max_length=100, min_length=8)
 
 
 class OtkCollection(BaseModel):

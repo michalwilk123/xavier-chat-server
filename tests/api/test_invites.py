@@ -106,7 +106,6 @@ def test_send_invite_normal():
 
     # bob sends an invite to alice
     response = test_client.post("/invites", json=data | b_sig)
-    print(f"{response.json()=}")
     assert (
         response.status_code == status.HTTP_200_OK
     ), "invite request should be successful"

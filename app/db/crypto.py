@@ -9,15 +9,14 @@ class CryptoControllerException(Exception):
 
 
 def get_user_otks(
-    db: Session, login: str, /, key_used: bool
+    db: Session, login: str, /, key_used: Optional[bool]
 ) -> Optional[List[Tuple[int, str]]]:
-    res = (
-        db.query(OneTimeKey)
-        .join(User)
-        .filter(User.login == login)
-        .filter(OneTimeKey.used == key_used)
-        .all()
-    )
+    res = db.query(OneTimeKey).join(User).filter(User.login == login)
+
+    if key_used is not None:
+        res = res.filter(OneTimeKey.used == key_used)
+
+    res = res.all()
 
     if res is None:
         return None
@@ -43,6 +42,24 @@ def get_free_otk(db: Session, login: str) -> Optional[Tuple[int, str]]:
         return None
 
     return res.index, otk_val
+
+
+def delete_used_otk(db: Session, login: str):
+
+    res = (
+        db.query(OneTimeKey)
+        .join(User)
+        .filter(User.login == login)
+        .filter(OneTimeKey.used == True)
+        .all()
+    )
+
+    # this is so inefficient
+    # i am so sorry...
+    for entry in res:
+        db.delete(entry)
+
+    db.commit()
 
 
 def get_otk_from_idx(db: Session, login: str, idx: int) -> Optional[str]:
@@ -84,3 +101,20 @@ def set_one_time_keys(
 
     db.commit()
     return True
+
+
+def set_otk_and_replace(
+    db: Session, login: str, otk_collection: Dict[int, str]
+) -> bool:
+    res = (
+        db.query(OneTimeKey)
+        .join(User)
+        .filter(User.login == login)
+        .filter(OneTimeKey.index.in_(otk_collection.keys()))
+        .all()
+    )
+
+    for entry in res:
+        db.delete(entry)
+
+    return set_one_time_keys(db, login, otk_collection)
