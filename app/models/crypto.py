@@ -18,11 +18,8 @@ class OtkCollection(BaseModel):
     collection: List[OtkSimple]
 
 
-class ZkSnarkNaive(BaseModel):
+class FakeJWT(BaseModel):
     """
-    THIS IS INCORRECT ZK SNARK!
-    IT IS NOT SAFE AT ALL.
-
     We are assigning the expiration date
     (POSIX time) for signature. To verify that message was not
     tampered, we adding a check sum to verify the authenticity
@@ -35,10 +32,10 @@ class ZkSnarkNaive(BaseModel):
 
     expiration_time: int
     creation: int
-    check_sum: Optional[str]
+    checksum: Optional[str]
 
 
-def hash_signature(sign: ZkSnarkNaive, secret: str) -> str:
+def hash_signature(sign: FakeJWT, secret: str) -> str:
     # NOTE : should switch in future to bcrypt or argon2
     return hashlib.sha256(
         (
@@ -49,10 +46,10 @@ def hash_signature(sign: ZkSnarkNaive, secret: str) -> str:
     ).hexdigest()
 
 
-def validate_signature(sign: ZkSnarkNaive, secret: str) -> bool:
-    if sign.check_sum is None:
+def validate_signature(sign: FakeJWT, secret: str) -> bool:
+    if sign.checksum is None:
         raise SignatureError(
             "The checksum must be provided for the"
             " signature if you wish to validate it"
         )
-    return secrets.compare_digest(sign.check_sum, hash_signature(sign, secret))
+    return secrets.compare_digest(sign.checksum, hash_signature(sign, secret))

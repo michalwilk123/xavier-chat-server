@@ -1,6 +1,7 @@
 from .database import Base
 from sqlalchemy import Column, Integer, String, ForeignKey, Boolean
 from sqlalchemy.orm import relationship
+from sqlalchemy.ext.hybrid import hybrid_property
 
 
 class User(Base):
@@ -12,9 +13,7 @@ class User(Base):
     public_signed_pre_key = Column(String(32), nullable=False)
     signature = Column(String(32), nullable=False)
 
-    one_time_keys = relationship(
-        "OneTimeKey", backref="owner", passive_deletes=True
-    )
+    one_time_keys = relationship("OneTimeKey", backref="owner", passive_deletes=True)
     sent_invites = relationship(
         "UserInvite",
         back_populates="sender",
@@ -25,6 +24,20 @@ class User(Base):
         "UserInvite",
         back_populates="reciever",
         foreign_keys="UserInvite.reciever_id",
+        passive_deletes=True,
+    )
+
+    contacts_initialized = relationship(
+        "UserContact",
+        back_populates="initializer",
+        foreign_keys="UserContact.initializer_id",
+        passive_deletes=True,
+    )
+
+    contacts_recieved = relationship(
+        "UserContact",
+        back_populates="recipient",
+        foreign_keys="UserContact.recipient_id ",
         passive_deletes=True,
     )
 
@@ -61,3 +74,28 @@ class UserInvite(Base):
     reciever = relationship(
         "User", back_populates="recieved_invites", foreign_keys=[reciever_id]
     )
+
+
+class UserContact(Base):
+    __tablename__ = "user_contacts"
+
+    id = Column(Integer, primary_key=True, index=True)
+
+    initializer_id = Column(
+        Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False
+    )
+
+    recipient_id = Column(
+        Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False
+    )
+
+    initializer = relationship(
+        "User", back_populates="contacts_initialized", foreign_keys=[initializer_id]
+    )
+    recipient = relationship(
+        "User", back_populates="contacts_recieved", foreign_keys=[recipient_id]
+    )
+
+    @hybrid_property
+    def conversation_address(self):
+        return "{} {}".format(self.initializer.login, self.recipient.login)

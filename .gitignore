@@ -6,3 +6,5 @@ __pycache__
 scratches
 test.db
 *.db-journal
+notes.md
+*.db

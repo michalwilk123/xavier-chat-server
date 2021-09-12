@@ -8,8 +8,10 @@ def get_settings():
 
 
 class Settings(BaseSettings):
-    sqlalchemy_database_url: str
     base_url: str
+    redis_password: str
+    postgres_db: str
+    broadcaster_source: str
 
     class Config:
         env_file = ".env"

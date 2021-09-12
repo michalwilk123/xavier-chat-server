@@ -8,18 +8,16 @@ from app.utils import crypto as crypto_utils
 crypto_router = APIRouter(prefix="/crypto")
 
 
-def exception_dispatcher(e: Exception) -> HTTPException:
+async def exception_dispatcher(e: Exception) -> HTTPException:
     if type(e) == crypto.CryptoControllerException:
         return HTTPException(status_code=503, detail=f"Problem with keys: {e}")
     elif type(e) == IndexError:
-        return HTTPException(
-            status_code=403, detail=f"Problem with index: {e}"
-        )
+        return HTTPException(status_code=403, detail=f"Problem with index: {e}")
     return HTTPException(status_code=403, detail=f"User error: {e}")
 
 
 @crypto_router.get("/one-time-keys")
-def get_otks(
+async def get_otks(
     used: bool = None, data=Depends(authenticate_user)
 ) -> List[Tuple[int, str]]:
     login, db = data
@@ -34,7 +32,7 @@ def get_otks(
 
 
 @crypto_router.post("/one-time-keys")
-def assign_new_otks(
+async def assign_new_otks(
     otk_collection: OtkCollection, data=Depends(authenticate_user)
 ) -> str:
     login, db = data
@@ -52,7 +50,7 @@ def assign_new_otks(
 
 
 @crypto_router.post("/generate-otks")
-def generate_new_otks(
+async def generate_new_otks(
     limit: Optional[int] = Query(None, ge=0, le=100),
     data=Depends(authenticate_user),
 ) -> str:
@@ -78,9 +76,7 @@ def generate_new_otks(
 
     new_otks = crypto_utils.generate_otks(limit)
 
-    if not crypto.set_one_time_keys(
-        db, login, {i: v for i, v in enumerate(new_otks)}
-    ):
+    if not crypto.set_one_time_keys(db, login, {i: v for i, v in enumerate(new_otks)}):
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=(f"The user: {login}, was lost " "thoughout the request"),

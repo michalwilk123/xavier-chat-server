@@ -1,8 +1,10 @@
+from app.db.models import User, UserInvite
 from typing import Tuple
 from app.models import UserData, InviteModel
-from tests.conftest import test_client
+from tests.conftest import TestingSessionLocal, test_client
 from fastapi import status
 from .utils import generate_signature
+import pytest
 
 alice_user = UserData(
     login="alice",
@@ -40,14 +42,41 @@ bob_to_alice_invite = InviteModel(
 )
 
 
-def clear_and_create_alice_bob() -> Tuple[dict, dict]:
+@pytest.fixture
+def clear_and_create_alice_bob() -> Tuple:
     a_sig = generate_signature(alice_user.login, alice_user.signature)
     b_sig = generate_signature(bob_user.login, bob_user.signature)
-    test_client.delete("/users", json=a_sig)
-    test_client.delete("/users", json=b_sig)
     test_client.post("/users", json=alice_user.dict())
     test_client.post("/users", json=bob_user.dict())
-    return a_sig, b_sig
+
+    yield a_sig, b_sig
+    test_client.delete("/users", json=a_sig)
+    test_client.delete("/users", json=b_sig)
+
+
+@pytest.fixture
+def create_invite(clear_and_create_alice_bob):
+    a_sig, b_sig = clear_and_create_alice_bob
+
+    data = {"invite": bob_to_alice_invite.dict()}
+
+    # bob sends an invite to the alice
+    test_client.post("/invites", json=data | b_sig)
+
+    yield a_sig, b_sig, bob_to_alice_invite.dict()
+    db = TestingSessionLocal()
+
+    invites_to_delete = (
+        db.query(UserInvite)
+        .join(User, UserInvite.sender)
+        .filter(User.signature == b_sig["login"])
+        .all()
+    )
+
+    for inv in invites_to_delete:
+        inv.delete()
+
+    db.commit()
 
 
 def test_auth_integrity():
@@ -100,8 +129,9 @@ def test_auth_integrity():
     test_client.delete("/users", json=bob_signature)
 
 
-def test_send_invite_normal():
-    a_sig, b_sig = clear_and_create_alice_bob()
+def test_send_invite_normal(clear_and_create_alice_bob):
+    a_sig, b_sig = clear_and_create_alice_bob
+
     data = {"invite": bob_to_alice_invite.dict()}
 
     # bob sends an invite to alice
@@ -110,13 +140,9 @@ def test_send_invite_normal():
         response.status_code == status.HTTP_200_OK
     ), "invite request should be successful"
 
-    # cleaning up
-    test_client.delete("/users", json=a_sig)
-    test_client.delete("/users", json=b_sig)
 
-
-def test_get_invites():
-    a_sig, b_sig = clear_and_create_alice_bob()
+def test_get_invites(clear_and_create_alice_bob):
+    a_sig, b_sig = clear_and_create_alice_bob
 
     data = {"invite": bob_to_alice_invite.dict()}
 
@@ -133,12 +159,9 @@ def test_get_invites():
     ), "invite retrieval should end up successful"
     assert len(response.json()) == 1, "expecting 1 new invite from the bob"
 
-    test_client.delete("/users", json=a_sig)
-    test_client.delete("/users", json=b_sig)
 
-
-def test_otks_consumed():
-    a_sig, b_sig = clear_and_create_alice_bob()
+def test_otks_consumed(mocker, clear_and_create_alice_bob):
+    a_sig, b_sig = clear_and_create_alice_bob
     data = {"invite": bob_to_alice_invite.dict()}
 
     # bob sends an invite to alice
@@ -146,6 +169,8 @@ def test_otks_consumed():
     assert (
         response.status_code == status.HTTP_200_OK
     ), "first invite request should be successful"
+
+    mocker.patch("app.db.invites.invite_exists", return_value=False)
 
     # bob sends an invite to alice second time
     response = test_client.post("/invites", json=data | b_sig)
@@ -160,13 +185,9 @@ def test_otks_consumed():
         response.status_code == status.HTTP_404_NOT_FOUND
     ), "Alice should run out of keys"
 
-    # cleaning up
-    test_client.delete("/users", json=a_sig)
-    test_client.delete("/users", json=b_sig)
 
-
-def test_recieve_no_invites():
-    a_sig, b_sig = clear_and_create_alice_bob()
+def test_recieve_no_invites(clear_and_create_alice_bob):
+    a_sig, b_sig = clear_and_create_alice_bob
 
     # alice checks her inbox for incoming invites
     response = test_client.get("/invites", json=a_sig)
@@ -175,5 +196,57 @@ def test_recieve_no_invites():
     ), "invite retrieval should end up successful"
     assert response.json() == [], "expecting 0 new invites from the users"
 
-    test_client.delete("/users", json=a_sig)
-    test_client.delete("/users", json=b_sig)
+
+def test_create_invite_duplicate(clear_and_create_alice_bob):
+    a_sig, b_sig = clear_and_create_alice_bob
+
+    data = {"invite": bob_to_alice_invite.dict()}
+
+    # bob sends an invite to the alice
+    response = test_client.post("/invites", json=data | b_sig)
+    assert response.status_code == status.HTTP_200_OK, response.json()
+
+    # bob sends second, redundant invite to alice
+    response = test_client.post("/invites", json=data | b_sig)
+    assert response.status_code == status.HTTP_403_FORBIDDEN, response.json()
+
+
+def test_invite_and_accept(create_invite):
+    a_sig, _, invite = create_invite
+
+    res = test_client.get("/contacts", json=a_sig)
+
+    response = test_client.post(
+        f"/invites/answer/{invite['public_ephemeral_key']}/accept",
+        json=a_sig
+    )
+    assert response.status_code == status.HTTP_200_OK, response.json()
+
+    # alice should have 1 new contact
+    res = test_client.get("/contacts", json=a_sig)
+    assert res.status_code == status.HTTP_200_OK, res.json()
+    assert len(res.json()) == 1, res.json()
+
+
+def test_invite_and_reject(create_invite):
+    a_sig, b_sig, invite = create_invite
+
+    response = test_client.post(
+        f"/invites/answer/{invite['public_ephemeral_key']}/reject",
+        json=a_sig
+    )
+    assert response.status_code == status.HTTP_200_OK, response.json()
+
+    res = test_client.get("/contacts", json=a_sig)
+    assert res.status_code == status.HTTP_200_OK, res.json()
+    assert len(res.json()) == 0, res.json()
+
+
+def test_invite_and_bad_decision(create_invite):
+    a_sig, _, invite = create_invite
+
+    response = test_client.post(
+        f"/invites/answer/{invite['public_ephemeral_key']}/ehhe",
+        json=a_sig
+    )
+    assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY, response.json()

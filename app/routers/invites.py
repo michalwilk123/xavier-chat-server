@@ -3,23 +3,21 @@ from fastapi.exceptions import HTTPException
 from app.models.invites import InviteModel, InviteResponse
 from fastapi import APIRouter, Depends, status
 from app.routers.deps import authenticate_user
-from app.db import user, invites, crypto
+from app.db import user, invites, crypto, contacts
+from typing import Literal
 import secrets
 
 invites_router = APIRouter(prefix="/invites")
 
 
 @invites_router.post("")
-def send_invite(
-    invite: InviteModel, data=Depends(authenticate_user)
-) -> InviteResponse:
+async def send_invite(invite: InviteModel, data=Depends(authenticate_user)) -> InviteResponse:
     login, db = data
     if secrets.compare_digest(invite.recv_login, login):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail=(
-                f"You are logged as {login} and trying to send "
-                "invite to yourself"
+                f"You are logged as {login} and trying to send " "invite to yourself"
             ),
         )
 
@@ -28,18 +26,14 @@ def send_invite(
     if sender is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail=(
-                f"The sender (login: {invite.sender_login}) " "does not exist!"
-            ),
+            detail=(f"The sender (login: {invite.sender_login}) " "does not exist!"),
         )
 
     reciever = user.get_user_data(db, invite.recv_login, get_id=True)
     if reciever is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail=(
-                f"The reciever (login: {invite.recv_login}) " "does not exist!"
-            ),
+            detail=(f"The reciever (login: {invite.recv_login}) " "does not exist!"),
         )
 
     sender_id, reciever_id = sender.user_id, reciever.user_id
@@ -50,6 +44,15 @@ def send_invite(
             detail=(
                 f"The users {sender.login} or {reciever.login}"
                 " does not possess primary id key in the database"
+            ),
+        )
+
+    if invites.invite_exists(db, sender_id, reciever_id):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail=(
+                f"The user {sender.login} already sent user {reciever.login}"
+                " an invite! Wait till the reciever accepts your last request."
             ),
         )
 
@@ -67,9 +70,7 @@ def send_invite(
             )
         invite.otk_index, otk_val = res
     else:
-        otk_val = crypto.get_otk_from_idx(
-            db, invite.recv_login, invite.otk_index
-        )
+        otk_val = crypto.get_otk_from_idx(db, invite.recv_login, invite.otk_index)
 
     try:
         invites.add_invite(db, invite, sender_id, reciever_id)
@@ -87,6 +88,38 @@ def send_invite(
 
 
 @invites_router.get("")
-def get_my_invites(data=Depends(authenticate_user)):
+async def get_my_invites(data=Depends(authenticate_user)) -> list[InviteModel]:
     login, db = data
     return invites.get_invites(db, login)
+
+
+@invites_router.post("/answer/{ephem_key}/{decision}")
+def respond_to_invite(
+    ephem_key: str,
+    decision: Literal["accept", "reject"],
+    data=Depends(authenticate_user),
+):
+    login, db = data
+    invite_tup = invites.get_invite_by_ephemeral_key(db, login, ephem_key)
+
+    if invite_tup is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="could not find an invite with given key/username",
+        )
+
+    invite, sender_id, reciever_id = invite_tup
+
+    if decision == "accept":
+        if contacts.contact_exists(db, sender_id, reciever_id):
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail=(
+                    "Users already established a conversation! Creating "
+                    "subsequent conversation is forbidden."
+                ),
+            )
+        contacts.create_new_contact(db, sender_id, reciever_id)
+
+    invites.delete_invite(db, sender_id, reciever_id)
+    return "OK"

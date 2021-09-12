@@ -8,7 +8,7 @@ from sqlalchemy.engine import Engine
 
 
 # Because of lack of support of foreign keys in sqlite we MUST EXPLICILY
-# perform pragma on this dbms ;^)
+# perform pragma on this dbms :^)
 @event.listens_for(Engine, "connect")
 def set_sqlite_pragma(dbapi_connection, connection_record):
     cursor = dbapi_connection.cursor()
@@ -24,9 +24,7 @@ engine = create_engine(
     connect_args={"check_same_thread": False},
     echo=False,
 )
-TestingSessionLocal = sessionmaker(
-    autocommit=False, autoflush=False, bind=engine
-)
+TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 Base.metadata.create_all(bind=engine)
 

@@ -83,17 +83,14 @@ def get_otk_from_idx(db: Session, login: str, idx: int) -> Optional[str]:
     return otk_value
 
 
-def set_one_time_keys(
-    db: Session, login: str, otk_collection: Dict[int, str]
-) -> bool:
+def set_one_time_keys(db: Session, login: str, otk_collection: Dict[int, str]) -> bool:
     user = db.query(User).filter(User.login == login).first()
 
     if user is None:
         return False
 
     otk_list = [
-        OneTimeKey(value=otk_collection[idx], index=idx)
-        for idx in otk_collection
+        OneTimeKey(value=otk_collection[idx], index=idx) for idx in otk_collection
     ]
 
     for otk in otk_list:
