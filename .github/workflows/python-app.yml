@@ -12,10 +12,10 @@ on:
 jobs:
   test_server:
     runs-on: ubuntu-latest
-    
+
     environment:
       name: test_environ
-    
+
     env:
       BASE_URL: ${{ secrets.BASE_URL }}
       POSTGRES_DB: ${{ secrets.POSTGRES_DB }}
@@ -23,7 +23,7 @@ jobs:
       POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
       REDIS_PASSWORD: ${{ secrets.REDIS_PASSWORD }}
       BROADCASTER_SOURCE: ${{ secrets.BROADCASTER_SOURCE }}
-      
+
     steps:
     - uses: actions/checkout@v2
     - name: Set up Python 3.9
