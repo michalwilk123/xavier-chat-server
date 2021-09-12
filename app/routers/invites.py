@@ -1,23 +1,28 @@
-from app.models.user import UserDataDTO
-from fastapi.exceptions import HTTPException
-from app.models.invites import InviteModel, InviteResponse
-from fastapi import APIRouter, Depends, status
-from app.routers.deps import authenticate_user
-from app.db import user, invites, crypto, contacts
-from typing import Literal
 import secrets
+from typing import Literal
+
+from fastapi import APIRouter, Depends, status
+from fastapi.exceptions import HTTPException
+
+from app.db import contacts, crypto, invites, user
+from app.models.invites import InviteModel, InviteResponse
+from app.models.user import UserDataDTO
+from app.routers.deps import authenticate_user
 
 invites_router = APIRouter(prefix="/invites")
 
 
 @invites_router.post("")
-async def send_invite(invite: InviteModel, data=Depends(authenticate_user)) -> InviteResponse:
+async def send_invite(
+    invite: InviteModel, data=Depends(authenticate_user)
+) -> InviteResponse:
     login, db = data
     if secrets.compare_digest(invite.recv_login, login):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail=(
-                f"You are logged as {login} and trying to send " "invite to yourself"
+                f"You are logged as {login} and trying to send "
+                "invite to yourself"
             ),
         )
 
@@ -26,14 +31,18 @@ async def send_invite(invite: InviteModel, data=Depends(authenticate_user)) -> I
     if sender is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail=(f"The sender (login: {invite.sender_login}) " "does not exist!"),
+            detail=(
+                f"The sender (login: {invite.sender_login}) " "does not exist!"
+            ),
         )
 
     reciever = user.get_user_data(db, invite.recv_login, get_id=True)
     if reciever is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail=(f"The reciever (login: {invite.recv_login}) " "does not exist!"),
+            detail=(
+                f"The reciever (login: {invite.recv_login}) " "does not exist!"
+            ),
         )
 
     sender_id, reciever_id = sender.user_id, reciever.user_id
@@ -70,7 +79,9 @@ async def send_invite(invite: InviteModel, data=Depends(authenticate_user)) -> I
             )
         invite.otk_index, otk_val = res
     else:
-        otk_val = crypto.get_otk_from_idx(db, invite.recv_login, invite.otk_index)
+        otk_val = crypto.get_otk_from_idx(
+            db, invite.recv_login, invite.otk_index
+        )
 
     try:
         invites.add_invite(db, invite, sender_id, reciever_id)

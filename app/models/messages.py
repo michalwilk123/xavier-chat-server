@@ -1,6 +1,7 @@
-from pydantic import BaseModel
-from typing import List, Optional
 import time
+from typing import List, Optional
+
+from pydantic import BaseModel
 
 
 class SingleMessage(BaseModel):
@@ -19,5 +20,3 @@ class MessagePackage(BaseModel):
 class SingleContact(BaseModel):
     contact_name: str
     conversation_channel: str
-
-

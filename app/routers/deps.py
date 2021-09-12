@@ -1,12 +1,13 @@
-from app.models.user import UserData
-from fastapi.params import Body, Depends
-from app.models.crypto import FakeJWT, validate_signature
-from sqlalchemy.orm import Session
-from fastapi import HTTPException, status, Body
-from app.db.user import get_user_data
-from app.db.database import SessionLocal
-from typing import Generator, Optional, Tuple, Generator
 import time
+from typing import Generator, Optional, Tuple
+
+from fastapi import Body, Depends, HTTPException, status
+from sqlalchemy.orm import Session
+
+from app.db.database import SessionLocal
+from app.db.user import get_user_data
+from app.models.crypto import FakeJWT, validate_signature
+from app.models.user import UserData
 
 
 def get_db() -> Generator:

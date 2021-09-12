@@ -1,15 +1,19 @@
-from app.models import UserData, UserDataDTO
-from fastapi import HTTPException, status, APIRouter, Depends
-from app.db import user
+from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
-from .deps import get_db, authenticate_user
+
+from app.db import user
+from app.models import UserData, UserDataDTO
+
+from .deps import authenticate_user, get_db
 
 user_router = APIRouter(prefix="/users")
 
 
 @user_router.get("")
 @user_router.get("/{login}")
-async def get_user_info(login: str, db: Session = Depends(get_db)) -> UserDataDTO:
+async def get_user_info(
+    login: str, db: Session = Depends(get_db)
+) -> UserDataDTO:
     user_data = user.get_user_data(db, login)
     if user_data is None:
         raise HTTPException(
@@ -30,7 +34,9 @@ async def add_user(user_data: UserData, db: Session = Depends(get_db)) -> str:
 
 
 @user_router.delete("")
-async def delete_user(data=Depends(authenticate_user), db: Session = Depends(get_db)) -> str:
+async def delete_user(
+    data=Depends(authenticate_user), db: Session = Depends(get_db)
+) -> str:
     login, db = data
 
     if user.delete_user(db, login) is False:

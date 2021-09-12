@@ -1,6 +1,8 @@
-from app.db.models import OneTimeKey, User
-from typing import Dict, Tuple, Optional, List
+from typing import Dict, List, Optional, Tuple
+
 from sqlalchemy.orm import Session
+
+from app.db.models import OneTimeKey, User
 
 
 # NOTE: could make some logs
@@ -29,7 +31,7 @@ def get_free_otk(db: Session, login: str) -> Optional[Tuple[int, str]]:
         db.query(OneTimeKey)
         .join(User)
         .filter(User.login == login)
-        .filter(OneTimeKey.used == False)
+        .filter(OneTimeKey.used.__eq__(False))
         .first()
     )
 
@@ -50,7 +52,7 @@ def delete_used_otk(db: Session, login: str):
         db.query(OneTimeKey)
         .join(User)
         .filter(User.login == login)
-        .filter(OneTimeKey.used == True)
+        .filter(OneTimeKey.used.__eq__(True))
         .all()
     )
 
@@ -83,14 +85,17 @@ def get_otk_from_idx(db: Session, login: str, idx: int) -> Optional[str]:
     return otk_value
 
 
-def set_one_time_keys(db: Session, login: str, otk_collection: Dict[int, str]) -> bool:
+def set_one_time_keys(
+    db: Session, login: str, otk_collection: Dict[int, str]
+) -> bool:
     user = db.query(User).filter(User.login == login).first()
 
     if user is None:
         return False
 
     otk_list = [
-        OneTimeKey(value=otk_collection[idx], index=idx) for idx in otk_collection
+        OneTimeKey(value=otk_collection[idx], index=idx)
+        for idx in otk_collection
     ]
 
     for otk in otk_list:

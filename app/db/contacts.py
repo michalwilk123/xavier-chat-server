@@ -1,11 +1,14 @@
-from app.db.models import UserContact, User
 from sqlalchemy.orm import Session
-from app.models.messages import SingleContact
+
+from app.db.models import User, UserContact
 from app.db.user import get_user_data
+from app.models.messages import SingleContact
 
 
 def create_new_contact(db: Session, sender_id: int, reciever_id: int) -> None:
-    orm_contact = UserContact(initializer_id=sender_id, recipient_id=reciever_id)
+    orm_contact = UserContact(
+        initializer_id=sender_id, recipient_id=reciever_id
+    )
     db.add(orm_contact)
     db.commit()
 
@@ -21,6 +24,7 @@ def contact_exists(db: Session, sender_id: int, reciever_id: int) -> bool:
         is not None
     )
 
+
 def get_contacts(db: Session, login: str) -> list[SingleContact]:
     contact_list = []
     user_id = get_user_data(db, login, get_id=True)
@@ -30,8 +34,16 @@ def get_contacts(db: Session, login: str) -> list[SingleContact]:
 
     user_id = user_id.user_id
 
-    contacts_init = db.query(UserContact).join(User, UserContact.initializer_id == user_id).all()
-    contacts_recv = db.query(UserContact).join(User, UserContact.recipient_id == user_id).all()
+    contacts_init = (
+        db.query(UserContact)
+        .join(User, UserContact.initializer_id == user_id)
+        .all()
+    )
+    contacts_recv = (
+        db.query(UserContact)
+        .join(User, UserContact.recipient_id == user_id)
+        .all()
+    )
 
     for cont in contacts_init:
         contact_list.append(

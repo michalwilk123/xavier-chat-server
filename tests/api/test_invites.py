@@ -1,10 +1,13 @@
-from app.db.models import User, UserInvite
 from typing import Tuple
-from app.models import UserData, InviteModel
-from tests.conftest import TestingSessionLocal, test_client
-from fastapi import status
-from .utils import generate_signature
+
 import pytest
+from fastapi import status
+
+from app.db.models import User, UserInvite
+from app.models import InviteModel, UserData
+from tests.conftest import TestingSessionLocal, test_client
+
+from .utils import generate_signature
 
 alice_user = UserData(
     login="alice",
@@ -217,8 +220,7 @@ def test_invite_and_accept(create_invite):
     res = test_client.get("/contacts", json=a_sig)
 
     response = test_client.post(
-        f"/invites/answer/{invite['public_ephemeral_key']}/accept",
-        json=a_sig
+        f"/invites/answer/{invite['public_ephemeral_key']}/accept", json=a_sig
     )
     assert response.status_code == status.HTTP_200_OK, response.json()
 
@@ -232,8 +234,7 @@ def test_invite_and_reject(create_invite):
     a_sig, b_sig, invite = create_invite
 
     response = test_client.post(
-        f"/invites/answer/{invite['public_ephemeral_key']}/reject",
-        json=a_sig
+        f"/invites/answer/{invite['public_ephemeral_key']}/reject", json=a_sig
     )
     assert response.status_code == status.HTTP_200_OK, response.json()
 
@@ -246,7 +247,8 @@ def test_invite_and_bad_decision(create_invite):
     a_sig, _, invite = create_invite
 
     response = test_client.post(
-        f"/invites/answer/{invite['public_ephemeral_key']}/ehhe",
-        json=a_sig
+        f"/invites/answer/{invite['public_ephemeral_key']}/ehhe", json=a_sig
     )
-    assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY, response.json()
+    assert (
+        response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
+    ), response.json()

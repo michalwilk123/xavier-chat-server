@@ -1,6 +1,6 @@
-from app.config import get_settings
 from broadcaster import Broadcast
-import asyncio_redis
+
+from app.config import get_settings
 
 broadcast = Broadcast(get_settings().broadcaster_source)
 

@@ -1,6 +1,5 @@
-from app.models.crypto import OtkCollection
 import secrets
-from typing import List, Dict
+from typing import List
 
 
 def generate_otks(num_of_keys: int) -> List[str]:

@@ -1,5 +1,7 @@
 from typing import List, Optional
+
 from sqlalchemy.orm import Session
+
 from app.db.models import UserContact
 
 
@@ -34,4 +36,3 @@ def check_contact_exists(db: Session, init_id: int, particip_id: int) -> bool:
         )
         .all()
     )
-

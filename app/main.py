@@ -1,17 +1,20 @@
 from fastapi import FastAPI
 from fastapi.openapi.utils import get_openapi
-from app.routers.user import user_router
-from app.routers.chat import chat_router
-from app.routers.crypto import crypto_router
-from app.routers.invites import invites_router
-from app.routers.contacts import contacts_router
+
+from app.chat.connection import broadcast
 from app.config import AppInformation
 from app.db.database import Base, engine
-from app.chat.connection import broadcast
+from app.routers.chat import chat_router
+from app.routers.contacts import contacts_router
+from app.routers.crypto import crypto_router
+from app.routers.invites import invites_router
+from app.routers.user import user_router
 
 Base.metadata.create_all(bind=engine)
 
-app = FastAPI(on_startup=[broadcast.connect], on_shutdown=[broadcast.disconnect])
+app = FastAPI(
+    on_startup=[broadcast.connect], on_shutdown=[broadcast.disconnect]
+)
 app_information = AppInformation()
 
 

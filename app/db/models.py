@@ -1,7 +1,8 @@
-from .database import Base
-from sqlalchemy import Column, Integer, String, ForeignKey, Boolean
-from sqlalchemy.orm import relationship
+from sqlalchemy import Boolean, Column, ForeignKey, Integer, String
 from sqlalchemy.ext.hybrid import hybrid_property
+from sqlalchemy.orm import relationship
+
+from .database import Base
 
 
 class User(Base):
@@ -13,7 +14,9 @@ class User(Base):
     public_signed_pre_key = Column(String(32), nullable=False)
     signature = Column(String(32), nullable=False)
 
-    one_time_keys = relationship("OneTimeKey", backref="owner", passive_deletes=True)
+    one_time_keys = relationship(
+        "OneTimeKey", backref="owner", passive_deletes=True
+    )
     sent_invites = relationship(
         "UserInvite",
         back_populates="sender",
@@ -90,7 +93,9 @@ class UserContact(Base):
     )
 
     initializer = relationship(
-        "User", back_populates="contacts_initialized", foreign_keys=[initializer_id]
+        "User",
+        back_populates="contacts_initialized",
+        foreign_keys=[initializer_id],
     )
     recipient = relationship(
         "User", back_populates="contacts_recieved", foreign_keys=[recipient_id]
