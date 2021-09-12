@@ -4,12 +4,14 @@ from app.routers.user import user_router
 from app.routers.chat import chat_router
 from app.routers.crypto import crypto_router
 from app.routers.invites import invites_router
+from app.routers.contacts import contacts_router
 from app.config import AppInformation
 from app.db.database import Base, engine
+from app.chat.connection import broadcast
 
 Base.metadata.create_all(bind=engine)
 
-app = FastAPI()
+app = FastAPI(on_startup=[broadcast.connect], on_shutdown=[broadcast.disconnect])
 app_information = AppInformation()
 
 
@@ -29,6 +31,7 @@ app.include_router(crypto_router)
 app.include_router(invites_router)
 app.include_router(user_router)
 app.include_router(chat_router)
+app.include_router(contacts_router)
 
 
 def custom_openapi():

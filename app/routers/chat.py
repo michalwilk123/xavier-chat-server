@@ -1,41 +1,38 @@
-from fastapi import APIRouter, WebSocket
-from fastapi.param_functions import Depends
-from fastapi.security import HTTPBasicCredentials
-from app.chat.connection import (
-    close_websocket_con,
-    add_new_websocket_con,
-)
-from app.db.chat import send_chat_message_to_absent_user
-from fastapi.websockets import WebSocketDisconnect
-from app.models.websocket_init import WebsocketInit
+from fastapi.exceptions import HTTPException
+from starlette import status
+from app.models.crypto import FakeJWT
+from fastapi import APIRouter, Depends
+from starlette.websockets import WebSocket
+from fastapi.concurrency import run_until_first_complete
+from app.chat import connection
+from sqlalchemy.orm import Session
+from .deps import authenticate_user, get_db
+from app.db.chat import get_conversation_address
 
-chat_router = APIRouter(prefix="/chat")
-
-
-async def send_chat_message(websock: WebSocket, login: str):
-    # if check_if_user_available(login):
-    #     await send_chat_message_via_websockets(login, msg)
-    # else:
-    # await send_chat_message_to_absent_user(login, msg)
-    ...
+# cannot set prefix in the router due to fastapi bug
+chat_router = APIRouter()
 
 
-@chat_router.websocket("/ws")
-async def websocket_endpoint(websocket: WebSocket, data: WebsocketInit):
+@chat_router.websocket("/chat/ws")
+async def websocket_endpoint(
+    websocket: WebSocket,
+    login: str,
+    participant: str,
+    db: Session = Depends(get_db),
+):
     await websocket.accept()
-    await add_new_websocket_con(data.my_login, data.signature, websocket)
+    msg = await websocket.receive_json()
+    signature = FakeJWT(**msg)
 
-    try:
-        await send_chat_message(websocket, data.contact_login)
-    except WebSocketDisconnect:
-        await close_websocket_con(data.my_login, data.signature)
+    authenticate_user(signature, login, db)
 
+    # check if particip exists
+    address = get_conversation_address(db, login, participant)
 
-@chat_router.get("")
-async def get_pending_messages():
-    ...
-    # if not await user_auth(credentials.username, credentials.password):
-    #     return {"response": "not authorized"}
+    if address is None:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Naura")
 
-    # messages = await chat.get_pending_messages(credentials.username)
-    # return {"pending_messages": messages}
+    await run_until_first_complete(
+        (connection.chatroom_ws_receiver, {"websocket": websocket, "channel": address}),
+        (connection.chatroom_ws_sender, {"websocket": websocket, "channel": address}),
+    )

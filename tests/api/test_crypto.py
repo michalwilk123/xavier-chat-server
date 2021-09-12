@@ -41,6 +41,7 @@ alice_otk_coll = OtkCollection(
 
 GENERATED_KEYS = 10
 
+
 @pytest.fixture
 def create_users():
     a_sig = generate_signature(alice_user.login, alice_user.signature)
@@ -53,9 +54,9 @@ def create_users():
 
 
 @pytest.fixture
-def generate_and_use_keys(create_users):
+def generate_and_use_keys(mocker, create_users):
     res = test_client.post(
-        "/crypto/generate-otks", params={"limit": GENERATED_KEYS }, json=create_users[0]
+        "/crypto/generate-otks", params={"limit": GENERATED_KEYS}, json=create_users[0]
     )
     assert (
         res.status_code == status.HTTP_200_OK
@@ -63,27 +64,29 @@ def generate_and_use_keys(create_users):
 
     data = {"invite": bob_to_alice_invite.dict()}
 
-    for _ in range(GENERATED_KEYS//2):
-        test_client.post("/invites", json=data|create_users[1])
+    mocker.patch("app.db.invites.invite_exists", return_value=False)
+
+    for _ in range(GENERATED_KEYS // 2):
+        test_client.post("/invites", json=data | create_users[1])
 
     return create_users
 
 
 def test_populate_used_keys(generate_and_use_keys):
     a_sig, b_sig = generate_and_use_keys
-    res = test_client.get("/crypto/one-time-keys", params={"used":True}, json=a_sig)
+    res = test_client.get("/crypto/one-time-keys", params={"used": True}, json=a_sig)
     assert res.status_code == status.HTTP_200_OK, res.json()
-    assert len(res.json()) == GENERATED_KEYS//2
+    assert len(res.json()) == GENERATED_KEYS // 2
 
-    res = test_client.get("/crypto/one-time-keys", params={"used":False}, json=a_sig)
+    res = test_client.get("/crypto/one-time-keys", params={"used": False}, json=a_sig)
     assert res.status_code == status.HTTP_200_OK
-    assert len(res.json()) == GENERATED_KEYS - GENERATED_KEYS//2
+    assert len(res.json()) == GENERATED_KEYS - GENERATED_KEYS // 2
 
     res = test_client.post("/crypto/generate-otks", json=a_sig)
     assert res.status_code == status.HTTP_200_OK
     assert res.json() == "OK"
 
-    res = test_client.get("/crypto/one-time-keys", params={"used":False},json=a_sig)
+    res = test_client.get("/crypto/one-time-keys", params={"used": False}, json=a_sig)
     assert res.status_code == status.HTTP_200_OK
     assert len(res.json()) == GENERATED_KEYS
 
@@ -94,34 +97,30 @@ def test_assign_new_keys(create_users):
     res = test_client.get("/crypto/one-time-keys", json=a_sig)
     assert len(res.json()) == 0, res.json()
 
-    data = {"otk_collection":alice_otk_coll.dict()}|a_sig
+    data = {"otk_collection": alice_otk_coll.dict()} | a_sig
     res = test_client.post("/crypto/one-time-keys", json=data)
     assert res.json() == "OK", res.json()
 
     res = test_client.get("/crypto/one-time-keys", json=a_sig)
     assert len(res.json()) == len(alice_otk_coll.collection), res.json()
 
-    res.json().sort(key=lambda x:x[0])
+    res.json().sort(key=lambda x: x[0])
 
     for ori, res_key in zip(alice_otk_coll.collection, res.json()):
-        assert ori.index == res_key[0], (
-            f"bad index: value: {res_key[0]}, original: {ori.index}"
-        )
-        assert ori.value == res_key[1], (
-            f"bad index: value: {res_key[1]}, original: {ori.value}"
-        )
+        assert (
+            ori.index == res_key[0]
+        ), f"bad index: value: {res_key[0]}, original: {ori.index}"
+        assert (
+            ori.value == res_key[1]
+        ), f"bad index: value: {res_key[1]}, original: {ori.value}"
 
 
 def test_override_keys(create_users):
     a_sig, b_sig = create_users
     NUM_OF_KEYS = 4
-    test_client.post(
-        "/crypto/generate-otks",
-        params={"limit": NUM_OF_KEYS},
-        json=a_sig
-    )
+    test_client.post("/crypto/generate-otks", params={"limit": NUM_OF_KEYS}, json=a_sig)
 
-    data = {"otk_collection":alice_otk_coll.dict()}|a_sig
+    data = {"otk_collection": alice_otk_coll.dict()} | a_sig
     res = test_client.post("/crypto/one-time-keys", json=data)
     assert res.json() == "OK", res.json()
 
@@ -134,19 +133,15 @@ def test_generate_keys(create_users):
     a_sig, b_sig = create_users
     NUM_OF_KEYS = 10
     res = test_client.post(
-        "/crypto/generate-otks",
-        params={"limit": NUM_OF_KEYS},
-        json=a_sig
+        "/crypto/generate-otks", params={"limit": NUM_OF_KEYS}, json=a_sig
     )
     assert res.status_code == status.HTTP_200_OK, (
-        "Could not create keys for the user. "
-        f"Response message: {res.json()}"
+        "Could not create keys for the user. " f"Response message: {res.json()}"
     )
     res = test_client.get("/crypto/one-time-keys", json=a_sig)
 
     assert res.status_code == status.HTTP_200_OK, (
-        "Could not retrieve keys for the user. "
-        f"Response message: {res.json()}"
+        "Could not retrieve keys for the user. " f"Response message: {res.json()}"
     )
 
     assert len(res.json()) == NUM_OF_KEYS, (
