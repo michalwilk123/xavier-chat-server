@@ -1,9 +1,11 @@
-from .utils import generate_signature
-from app.models import UserData, InviteModel
-from app.db.models import UserInvite, User
-from tests.conftest import test_client, TestingSessionLocal
-from fastapi import status
 import pytest
+from fastapi import status
+
+from app.db.models import User, UserInvite
+from app.models import InviteModel, UserData
+from tests.conftest import TestingSessionLocal, test_client
+
+from .utils import generate_signature
 
 alice_user = UserData(
     login="alice",
@@ -88,7 +90,7 @@ def create_users():
     test_client.post("/users", json=charlie_user.dict())
     test_client.post("/users", json=dave_user.dict())
 
-    yield 
+    yield
 
     test_client.delete("/users", json=a_sig)
     test_client.delete("/users", json=b_sig)
@@ -139,8 +141,10 @@ def resolve_invites(send_invites):
     test_client.post(f"/invites/answer/{ephem_key1}/accept", json=b_sig)
     test_client.post(f"/invites/answer/{ephem_key2}/reject", json=c_sig)
 
+
 def test_fixtures(resolve_invites):
     ...
+
 
 def test_start_with_no_contacts(create_users):
     res = test_client.get("/invites", json=a_sig)
@@ -165,6 +169,7 @@ def test_get_empty_contact_list(resolve_invites):
     assert res.status_code == status.HTTP_200_OK, res.json()
     assert len(res.json()) == 0, res.json()
 
+
 def test_contact_recieved_from_two_parties(send_invites):
     data1 = {"invite": dave_to_charlie_invite.dict()}
     test_client.post("/invites", json=data1 | d_sig)
@@ -183,4 +188,3 @@ def test_contact_recieved_from_two_parties(send_invites):
     assert res_charlie.status_code == status.HTTP_200_OK
     assert len(res_dave.json()) == 1, res_dave.json()
     assert len(res_charlie.json()) == 2, res_charlie.json()
-

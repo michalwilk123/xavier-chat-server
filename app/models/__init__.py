@@ -1,6 +1,6 @@
-from .user import UserData, UserDataDTO
 from .invites import InviteModel
-from .otk import OtkModel, OtkInitialModel, OtkRequestModel
+from .otk import OtkInitialModel, OtkModel, OtkRequestModel
+from .user import UserData, UserDataDTO
 
 __all__ = [
     "UserData",

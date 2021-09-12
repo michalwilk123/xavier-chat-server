@@ -1,13 +1,15 @@
-from fastapi.exceptions import HTTPException
-from starlette import status
-from app.models.crypto import FakeJWT
 from fastapi import APIRouter, Depends
-from starlette.websockets import WebSocket
 from fastapi.concurrency import run_until_first_complete
-from app.chat import connection
+from fastapi.exceptions import HTTPException
 from sqlalchemy.orm import Session
-from .deps import authenticate_user, get_db
+from starlette import status
+from starlette.websockets import WebSocket
+
+from app.chat import connection
 from app.db.chat import get_conversation_address
+from app.models.crypto import FakeJWT
+
+from .deps import authenticate_user, get_db
 
 # cannot set prefix in the router due to fastapi bug
 chat_router = APIRouter()
@@ -30,9 +32,17 @@ async def websocket_endpoint(
     address = get_conversation_address(db, login, participant)
 
     if address is None:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Naura")
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, detail="Naura"
+        )
 
     await run_until_first_complete(
-        (connection.chatroom_ws_receiver, {"websocket": websocket, "channel": address}),
-        (connection.chatroom_ws_sender, {"websocket": websocket, "channel": address}),
+        (
+            connection.chatroom_ws_receiver,
+            {"websocket": websocket, "channel": address},
+        ),
+        (
+            connection.chatroom_ws_sender,
+            {"websocket": websocket, "channel": address},
+        ),
     )

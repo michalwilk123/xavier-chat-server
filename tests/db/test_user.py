@@ -1,7 +1,6 @@
-from app.db.crypto import delete_used_otk
-from tests.conftest import TestingSessionLocal
-from app.models.user import UserData
 from app.db import models
+from app.models.user import UserData
+from tests.conftest import TestingSessionLocal
 
 session = TestingSessionLocal()
 

@@ -1,10 +1,11 @@
+from fastapi.testclient import TestClient
+from sqlalchemy import create_engine, event
+from sqlalchemy.engine import Engine
+from sqlalchemy.orm import Session, sessionmaker
+
+from app.db.database import Base
 from app.main import app
 from app.routers.deps import get_db
-from fastapi.testclient import TestClient
-from sqlalchemy.orm import Session, sessionmaker
-from sqlalchemy import create_engine, event
-from app.db.database import Base
-from sqlalchemy.engine import Engine
 
 
 # Because of lack of support of foreign keys in sqlite we MUST EXPLICILY
@@ -24,7 +25,9 @@ engine = create_engine(
     connect_args={"check_same_thread": False},
     echo=False,
 )
-TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+TestingSessionLocal = sessionmaker(
+    autocommit=False, autoflush=False, bind=engine
+)
 
 Base.metadata.create_all(bind=engine)
 

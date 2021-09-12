@@ -1,8 +1,9 @@
-from typing import Optional, List
-from pydantic import BaseModel
-from fastapi import Query
 import hashlib
 import secrets
+from typing import List, Optional
+
+from fastapi import Query
+from pydantic import BaseModel
 
 
 class SignatureError(Exception):

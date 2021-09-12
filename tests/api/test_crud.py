@@ -2,10 +2,11 @@
 Unit tests for crud operations on users.
 Database connection is mocked.
 """
-import pytest
-from app.models.user import UserData, UserDataDTO
 from fastapi import status
+
+from app.models.user import UserData, UserDataDTO
 from tests.conftest import test_client
+
 from .utils import generate_signature
 
 alice_user = UserData(
@@ -30,7 +31,9 @@ def test_create():
     test_client.delete("/users", json=signature)
 
     resp = test_client.get("/users/alice")
-    assert resp.status_code == status.HTTP_404_NOT_FOUND, "user should not be found"
+    assert (
+        resp.status_code == status.HTTP_404_NOT_FOUND
+    ), "user should not be found"
 
     resp = test_client.post("/users", json=alice_user.dict())
     assert (
@@ -46,15 +49,21 @@ def test_create():
     ), f"request should be correct. Insted we got: {resp.json()}"
 
     resp = test_client.get("/users/alice")
-    assert resp.status_code == status.HTTP_404_NOT_FOUND, "user should not be found"
+    assert (
+        resp.status_code == status.HTTP_404_NOT_FOUND
+    ), "user should not be found"
 
 
 def test_create_w_otks():
-    signature = generate_signature(alice_user_w_otks.login, alice_user_w_otks.signature)
+    signature = generate_signature(
+        alice_user_w_otks.login, alice_user_w_otks.signature
+    )
     test_client.delete("/users", json=signature)
 
     resp = test_client.get("/users/alice_w_otk")
-    assert resp.status_code == status.HTTP_404_NOT_FOUND, "user should not be found"
+    assert (
+        resp.status_code == status.HTTP_404_NOT_FOUND
+    ), "user should not be found"
 
     resp = test_client.post("/users", json=alice_user_w_otks.dict())
     assert (
@@ -70,7 +79,9 @@ def test_create_w_otks():
     ), f"request should be correct. Insted we got: {resp.json()}"
 
     resp = test_client.get("/users/alice_w_otk")
-    assert resp.status_code == status.HTTP_404_NOT_FOUND, "user should not be found"
+    assert (
+        resp.status_code == status.HTTP_404_NOT_FOUND
+    ), "user should not be found"
 
 
 def test_read():
@@ -78,7 +89,9 @@ def test_read():
     test_client.delete("/users", json=signature)
 
     response = test_client.get("/users/alice")
-    assert response.status_code == status.HTTP_404_NOT_FOUND, "User should not be found"
+    assert (
+        response.status_code == status.HTTP_404_NOT_FOUND
+    ), "User should not be found"
 
     alice_user_resp = UserDataDTO(
         login="alice",
@@ -92,8 +105,7 @@ def test_read():
 
     assert response.json() == alice_user_resp.dict()
 
-    with pytest.raises(KeyError):
-        response.json()["signature"]
-        response.json()["one_time_keys"]
+    assert "signature" not in response.json(), response.json()
+    assert "one_time_keys" not in response.json(), response.json()
 
     test_client.delete("/users", json=signature)

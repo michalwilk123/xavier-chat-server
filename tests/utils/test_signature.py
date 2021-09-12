@@ -1,12 +1,14 @@
+import time
+
+import pytest
+
 from app.models.crypto import (
-    SignatureError,
     FakeJWT,
+    SignatureError,
     hash_signature,
     validate_signature,
 )
 from tests.conftest import TEST_SECRET
-import time
-import pytest
 
 
 def test_checksum_validation():
@@ -18,7 +20,8 @@ def test_checksum_validation():
     signature.checksum = "not valid checksum"
 
     assert validate_signature(signature, TEST_SECRET) is False, (
-        "The check sum is not valid. Therefore the validation " "should be unsuccessful"
+        "The check sum is not valid. Therefore the validation "
+        "should be unsuccessful"
     )
 
     signature.checksum = hash_signature(signature, TEST_SECRET)

@@ -1,7 +1,9 @@
-from app.models.invites import InviteModel
 from typing import List, Optional
+
 from sqlalchemy.orm import Session
+
 from app.db.models import User, UserInvite
+from app.models.invites import InviteModel
 
 
 class InviteModelException(Exception):
@@ -32,7 +34,8 @@ def get_invites(db: Session, login: str) -> List[InviteModel]:
 
 def delete_invite(db: Session, sender_id: int, reciever_id: int) -> None:
     db.query(UserInvite).filter(
-        (UserInvite.sender_id == sender_id) & (UserInvite.reciever_id == reciever_id)
+        (UserInvite.sender_id == sender_id)
+        & (UserInvite.reciever_id == reciever_id)
     ).delete()
 
 

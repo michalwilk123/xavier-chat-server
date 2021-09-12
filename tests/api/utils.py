@@ -1,6 +1,7 @@
-from typing import Optional
-from app.models.crypto import FakeJWT, hash_signature
 import time
+from typing import Optional
+
+from app.models.crypto import FakeJWT, hash_signature
 
 
 def generate_signature(

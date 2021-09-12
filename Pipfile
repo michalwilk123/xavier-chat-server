@@ -21,6 +21,8 @@ pytest = "*"
 black = "*"
 pytest-mock = "*"
 pytest-asyncio = "*"
+flake8 = "*"
+isort = "*"
 
 [requires]
 python_version = "3.9"
