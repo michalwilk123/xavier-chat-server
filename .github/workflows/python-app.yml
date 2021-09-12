@@ -10,9 +10,11 @@ on:
     branches: [ master ]
 
 jobs:
-  build:
-
+  test_server:
     runs-on: ubuntu-latest
+    
+    environment:
+      name: test_environ
 
     steps:
     - uses: actions/checkout@v2
