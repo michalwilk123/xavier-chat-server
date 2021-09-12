@@ -17,13 +17,13 @@ jobs:
       name: test_environ
     
     env:
-      BASE_URL: http://localhost:5000
-      POSTGRES_DB: xavier
-      POSTGRES_USER: michal
-      POSTGRES_PASSWORD: michal
-      REDIS_PASSWORD: michal
-      BROADCASTER_SOURCE: redis://redis_mq:6379
-
+      BASE_URL: ${{ secrets.BASE_URL }}
+      POSTGRES_DB: ${{ secrets.POSTGRES_DB }}
+      POSTGRES_USER: ${{ secrets.POSTGRES_USER }}
+      POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
+      REDIS_PASSWORD: ${{ secrets.REDIS_PASSWORD }}
+      BROADCASTER_SOURCE: ${{ secrets.BROADCASTER_SOURCE }}
+      
     steps:
     - uses: actions/checkout@v2
     - name: Set up Python 3.9
